@@ -1,6 +1,8 @@
 import { join } from 'path';
 import * as questions from './questions';
 import { getPort } from './app-discovery';
+import { pageUpdate } from './vf-page-update';
+const debug = require('debug')('plugin-ember-cli:info index');
 
 //Have to export this class because we are using the --declaration flag to generate type files,
 //otherwise, our default export throws a fit about the class being "private".
@@ -19,8 +21,9 @@ export class Plugin {
 		return { name, port, outputDirectory };
 	}
 
-	onFileChange(file: string) {
-		console.info('file in plugin => ', file);
+	onFileChange(org, page, file: string) {
+		debug(`file in plugin => ${file}`);
+		pageUpdate(org, page, file);
 	}
 
 }

@@ -1,11 +1,8 @@
-'use strict';
+import * as jsforce from 'jsforce';
+import * as fs from 'fs-extra';
+const debug = require('debug')('plugin-ember-cli:info vf-page-update');
 
-const Promise = require('bluebird');
-const fs = Promise.promisifyAll(require('fs-extra'));
-const jsforce = require('jsforce');
-const debug = require('debug')('simple-vf-plugin:ember-cli:info index');
-
-module.exports = function(org, page, file) {
+export function pageUpdate(org, page, file: string) {
 
 	file = file.trim();
 	debug(`file => ${file}`);
@@ -17,13 +14,13 @@ module.exports = function(org, page, file) {
 		accessToken: org.accessToken
 	});
 
-    Promise.props({
-        localFile: fs.readFileAsync(file),
-        vfPageRecord: conn.query(`Select Id, Markup From ApexPage Where Id = '${page.salesforceId}'`)
-    }).then(hash => {
+    Promise.all([
+        fs.readFile(file),
+        conn.query(`Select Id, Markup From ApexPage Where Id = '${page.salesforceId}'`)
+	]).then(results => {
 
-        let localFile = hash.localFile.toString('utf8');
-        let remoteFile = hash.vfPageRecord.records[0].Markup;
+        let localFile = results[0].toString('utf8');
+        let remoteFile = results[1].records[0].Markup;
 
         debug(`local file ${file} => %o`, localFile);
         debug(`remote file ${page.name} => %o`, remoteFile);
@@ -39,7 +36,6 @@ module.exports = function(org, page, file) {
         debug(`local meta => %o`, localFileMeta[0]);
 
         if(remoteFileMeta.length === 0) {
-            //remote$('title').after(localMeta);
             hasChange = false;
         } else if(remoteFileMeta[0] !== localFileMeta[0]) {
             remoteFile = remoteFile.replace(remoteFileMeta[0], localFileMeta[0]);
@@ -61,4 +57,5 @@ module.exports = function(org, page, file) {
     }).catch(err => {
         debug(`vf page update err => %o`, err);
     });
+
 }
