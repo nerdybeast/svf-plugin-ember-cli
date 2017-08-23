@@ -24,6 +24,8 @@
 		"fs-extra": "4.0.1",
 		"inquirer": "3.2.2",
 		"jsforce": "1.8.0",
+		"lodash.camelcase": "4.3.0",
+		"lodash.upperfirst": "4.3.1",
 		"strip-json-comments": "2.0.1"
 	},
 	"devDependencies": {

@@ -1,5 +1,6 @@
 import * as jsforce from 'jsforce';
 import * as fs from 'fs-extra';
+import { metaConfigPattern, search } from './regex';
 const debug = require('debug')('plugin-ember-cli:info vf-page-update');
 
 export function pageUpdate(org, page, file: string) {
@@ -25,10 +26,8 @@ export function pageUpdate(org, page, file: string) {
         debug(`local file ${file} => %o`, localFile);
         debug(`remote file ${page.name} => %o`, remoteFile);
 
-        const pattern = /\<\s*meta.*config\/environment.*(\/>|\>\s*\<\/\s*meta\s*\>)/;
-
-        let localFileMeta = new RegExp(pattern, 'gi').exec(localFile) || [];
-        let remoteFileMeta = new RegExp(pattern, 'gi').exec(remoteFile) || [];
+        let localFileMeta = search(metaConfigPattern, localFile);
+		let remoteFileMeta = search(metaConfigPattern, remoteFile);
 
         let hasChange = true;
 
