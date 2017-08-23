@@ -1,6 +1,6 @@
 {
 	"name": "@svf/plugin-ember-cli",
-	"version": "0.0.1",
+	"version": "0.0.2",
 	"description": "Ember-cli plugin for use with the simple-vf-cli command line utility.",
 	"author": "therealnerdybeast@gmail.com",
 	"license": "MIT",
