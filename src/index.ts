@@ -3,6 +3,7 @@ import * as fs from 'fs-extra';
 import * as questions from './questions';
 import { getPort, getMarkup } from './app-discovery';
 import { pageUpdate } from './vf-page-update';
+import getAppDetails from './app-details';
 
 const debug = require('debug')('plugin-ember-cli:info index');
 
@@ -13,9 +14,13 @@ export class Plugin {
 	async pageConfig(name?: string) {
 
 		let appDirectory = await questions.getAppDirectory();
-		let emberAppName = (await fs.readJson(join(appDirectory, 'package.json'))).name;
 
-		if(!name) name = await questions.getPageName(emberAppName);
+		let appDetails = await getAppDetails(appDirectory);
+
+		await questions.ensureLocationTypeSet(appDetails);
+		await questions.ensureAppHasBeenBuilt(appDetails);
+
+		name = await questions.getPageName(appDetails.name);
 
 		let port = await getPort(appDirectory);
 		
