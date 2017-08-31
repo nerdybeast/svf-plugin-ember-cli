@@ -57,5 +57,6 @@ typings/
 # dotenv environment variables file
 .env
 
-# Output directory
-dist
+# Source code and such that the user doesn't need this code on their machine, they just need the compiled output.
+src
+tsconfig.json
