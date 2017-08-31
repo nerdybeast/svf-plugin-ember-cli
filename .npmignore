@@ -60,3 +60,4 @@ typings/
 # Source code and such that the user doesn't need this code on their machine, they just need the compiled output.
 src
 tsconfig.json
+temp

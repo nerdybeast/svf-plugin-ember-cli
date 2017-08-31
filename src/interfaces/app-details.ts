@@ -3,4 +3,6 @@ export interface AppDetails {
 	locationType: string;
 	hasBeenBuilt: boolean;
 	appDirectory: string;
+	port: number;
+	outputPath: string;
 }

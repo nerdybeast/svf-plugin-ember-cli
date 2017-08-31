@@ -2,22 +2,6 @@ import * as fs from 'fs-extra';
 import { join } from 'path';
 import * as rex from './regex';
 
-const stripComments = require('strip-json-comments');
-
-export async function getPort(pathToApp: string) : Promise<number> {
-
-	let defaultPort = 4200;
-
-	try {
-		let commandLineFileContents = (await fs.readFile(join(pathToApp, '.ember-cli'))).toString();
-		let config = JSON.parse(stripComments(commandLineFileContents));
-		return config.port || defaultPort;
-	} catch (error) {
-		console.log(error);
-		return defaultPort;
-	}
-}
-
 export async function getMarkup(page) {
 
 	let htmlFileContents = (await fs.readFile(join(page.outputDir, 'index.html'))).toString();
@@ -71,7 +55,7 @@ function normalizeMetaTagEndings(htmlContents: string, tags: string[]) {
 
 function convertLinkTagsToStaticResource(htmlContents: string, tags: string[], pageName: string) : string {
 
-	tags.forEach(tag=> {
+	tags.forEach(tag => {
 		let href = /href="(.*)"/i.exec(tag)[1];
 		let replacementTag = `<link href="{!URLFOR(IF(IsUnderDevelopment, SimpleVfPageConfig.TunnelUrl__c, $Resource.${pageName})) + '${href}'}" rel="stylesheet" />`;
 		htmlContents = htmlContents.replace(tag, replacementTag);
@@ -82,7 +66,7 @@ function convertLinkTagsToStaticResource(htmlContents: string, tags: string[], p
 
 function convertScriptTagsToStaticResource(htmlContents: string, tags: string[], pageName: string) : string {
 	
-	tags.forEach(tag=> {
+	tags.forEach(tag => {
 		let src = /src="(.*)"/i.exec(tag)[1];
 		let replacementTag = `<script src="{!URLFOR(IF(IsUnderDevelopment, SimpleVfPageConfig.TunnelUrl__c, $Resource.${pageName})) + '${src}'}"></script>`;
 		htmlContents = htmlContents.replace(tag, replacementTag);

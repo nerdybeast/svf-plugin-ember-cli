@@ -59,3 +59,6 @@ typings/
 
 # Output directory
 dist
+
+# Temp directory
+temp
