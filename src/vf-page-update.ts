@@ -1,6 +1,7 @@
 import * as jsforce from 'jsforce';
 import * as fs from 'fs-extra';
 import { metaConfigPattern, search } from './regex';
+import { getVisualforceRecord } from './utils';
 const debug = require('debug')('@svf/plugin-ember-cli:info vf-page-update');
 
 export async function pageUpdate(org, page, file: string) {
@@ -15,13 +16,13 @@ export async function pageUpdate(org, page, file: string) {
 			accessToken: org.accessToken
 		});
 	
-		let [localFileRaw, apexPageQueryResult] = await Promise.all([
+		let [localFileRaw, visualforcePageRecord] = await Promise.all([
 			fs.readFile(file),
-			conn.query(`Select Id, Markup From ApexPage Where Id = '${page.salesforceId}'`)
+			getVisualforceRecord(org, page)
 		]);
 	
 		let localFile = localFileRaw.toString('utf8');
-		let remoteFile = apexPageQueryResult.records[0].Markup;
+		let remoteFile = visualforcePageRecord.Markup;
 	
 		debug(`local file ${file} => %o`, localFile);
 		debug(`remote file ${page.name} => %o`, remoteFile);

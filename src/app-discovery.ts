@@ -1,6 +1,7 @@
 import * as fs from 'fs-extra';
 import { join } from 'path';
 import * as rex from './regex';
+import { getDirectoryContents } from './utils';
 
 export async function getMarkup(page) {
 
@@ -18,6 +19,10 @@ export async function getMarkup(page) {
 	htmlFileContents = convertScriptTagsToStaticResource(htmlFileContents, scriptAssetTags, page.name);
 
 	return htmlFileContents;
+}
+
+export async function getAssetFileNames(appDirectory: string) : Promise<string[]> {
+	return getDirectoryContents(appDirectory);
 }
 
 function removeUnneededTags(htmlContents: string) : string {

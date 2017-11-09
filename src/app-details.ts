@@ -6,13 +6,14 @@ const stripComments = require('strip-json-comments');
 const debug = require('debug')('@svf/plugin-ember-cli app-details');
 const tmpDir = join(__dirname, '../temp');
 
-export default async function(appDirectory: string) : Promise<AppDetails> {
+export async function getAppDetails(appDirectory: string) : Promise<AppDetails> {
 
-	let [packageJson, locationType, hasBeenBuilt, buildConfig] = await Promise.all([
-		fs.readJson(join(appDirectory, 'package.json')),
+	let [packageJson, locationType, hasBeenBuilt, buildConfig, metaStoredInConfig] = await Promise.all([
+		getPackageJson(appDirectory),
 		getLocationType(appDirectory),
 		fs.pathExists(join(appDirectory, 'dist', 'index.html')),
-		getBuildConfig(appDirectory)
+		getBuildConfig(appDirectory),
+		getStoreMetaInConfig(appDirectory)
 	]);
 
 	debug(`has been built yet => ${hasBeenBuilt}`);
@@ -23,7 +24,50 @@ export default async function(appDirectory: string) : Promise<AppDetails> {
 	let port = buildConfig.port || 4200;
 	let outputPath = buildConfig.outputPath || 'dist';
 
-	return { name, locationType, hasBeenBuilt, appDirectory, port, outputPath };
+	return { 
+		name, 
+		locationType, 
+		hasBeenBuilt, 
+		appDirectory, 
+		port, 
+		outputPath,
+		metaStoredInConfig
+	};
+}
+
+export async function getPackageJson(appDirectory: string) : Promise<any> {
+
+	const fileName = 'package.json';
+
+	try {
+
+		return fs.readJson(join(appDirectory, fileName));
+
+	} catch (error) {
+		debug(`Error reading ${fileName} from ${appDirectory} => %o`, error);
+		throw error;
+	}
+}
+
+export async function getStoreMetaInConfig(appDirectory: string) : Promise<boolean> {
+	
+	let filePath = join(appDirectory, 'ember-cli-build.js');
+	let emberCliBuildFile;
+
+	try {
+		
+		emberCliBuildFile = (await fs.readFile(filePath)).toString();
+		let regex = new RegExp(`storeConfigInMeta\\s*:\\s*(true|false)`, 'i');
+		let result = regex.exec(emberCliBuildFile);
+	
+		return result !== null && result[1] === 'false';
+
+	} catch (error) {
+		debug(`Error parsing ${filePath} => %o`, error);
+		debug(`${filePath} contents => %o`, emberCliBuildFile);
+		return false;
+	}
+	
 }
 
 async function getLocationType(appDirectory: string) : Promise<string> {
