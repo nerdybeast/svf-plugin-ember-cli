@@ -22,7 +22,14 @@ export async function getMarkup(page) {
 }
 
 export async function getAssetFileNames(appDirectory: string) : Promise<string[]> {
-	return getDirectoryContents(appDirectory);
+	return getDirectoryContents(join(appDirectory, 'dist', 'assets'));
+}
+
+/**
+ * Used to remove the meta tag config from existing Visualforce pages 
+ */
+export function removeMetaTagConfig(htmlContents: string) : string {
+	return removeTags(htmlContents, rex.metaConfigPattern, '\n');
 }
 
 function removeUnneededTags(htmlContents: string) : string {

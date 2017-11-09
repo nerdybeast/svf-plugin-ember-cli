@@ -4,7 +4,7 @@ import * as questions from './questions';
 import { getMarkup, getAssetFileNames } from './app-discovery';
 import { pageUpdate } from './vf-page-update';
 import { getAppDetails, getPackageJson } from './app-details';
-import { getVisualforceRecord } from './utils';
+import { getVisualforceRecord, updateVisualforceRecord } from './utils';
 
 const debug = require('debug')('@svf/plugin-ember-cli:info index');
 
@@ -39,7 +39,7 @@ export class Plugin {
 	async onFileChange(org, page, file: string) {
 		debug(`file in plugin => ${file}`);
 		if(!file.endsWith('index.html')) return;
-		pageUpdate(org, page, file);
+		pageUpdate(org, page);
 	}
 
 	async prepareForDevelopment(org, page) {
@@ -52,44 +52,7 @@ export class Plugin {
 		await questions.ensureAppHasBeenBuilt(appDetails);
 		await questions.ensureStoreMetaInConfig(appDetails);
 
-		let [appName, fileNames, visualforcePageRecord] = await Promise.all([
-			getPackageJson(appDirectory),
-			getAssetFileNames(appDirectory),
-			getVisualforceRecord(org, page)
-		]);
-
-		let visualforcePage = visualforcePageRecord.Markup;
-		let visualforcePageCopy = new String(visualforcePage);
-		let prefix = `/assets/`;
-		let vendorJsRegex = new RegExp(`${prefix}vendor.*\.js`, 'i');
-		let vendorCssRegex = new RegExp(`${prefix}vendor.*\.css`, 'i');
-		let appJsRegex = new RegExp(`${prefix}${appName}.*\.js`, 'i');
-		let appCssRegex = new RegExp(`${prefix}${appName}.*\.css`, 'i');
-
-		fileNames.forEach(fileName => {
-			
-			fileName = `${prefix}${fileName}`;
-			
-			if(vendorJsRegex.exec(fileName)) {
-				visualforcePage = visualforcePage.replace(vendorJsRegex, fileName);
-			}
-
-			if(vendorCssRegex.exec(fileName)) {
-				visualforcePage = visualforcePage.replace(vendorCssRegex, fileName);
-			}
-
-			if(appJsRegex.exec(fileName)) {
-				visualforcePage = visualforcePage.replace(appJsRegex, fileName);
-			}
-
-			if(appCssRegex.exec(fileName)) {
-				visualforcePage = visualforcePage.replace(appCssRegex, fileName);
-			}
-
-		});
-
-		debug(`"updated" visualforce page markup => %o`, visualforcePage);
-		debug(`visualforce page change detected => ${visualforcePage !== visualforcePageCopy}`);
+		pageUpdate(org, page);
 	}
 
 }

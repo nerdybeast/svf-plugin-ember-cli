@@ -7,5 +7,5 @@ export const liveReloadScriptTagPattern: RegExp = /\<\s*script.*ember-cli-live-r
 export const doctypeTagPattern: RegExp = /\<\s*\!\s*doctype.*\>/gi;
 
 export function search(pattern: RegExp, content: string) : string[] {
-	return content.match(pattern);
+	return content.match(pattern) || [];
 }

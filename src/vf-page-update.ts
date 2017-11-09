@@ -1,60 +1,71 @@
 import * as jsforce from 'jsforce';
 import * as fs from 'fs-extra';
+import { join } from 'path';
 import { metaConfigPattern, search } from './regex';
-import { getVisualforceRecord } from './utils';
+import { getVisualforceRecord, updateVisualforceRecord } from './utils';
+import { getPackageJson } from './app-details';
+import { getMarkup, getAssetFileNames, removeMetaTagConfig } from './app-discovery';
+
 const debug = require('debug')('@svf/plugin-ember-cli:info vf-page-update');
 
-export async function pageUpdate(org, page, file: string) {
+export async function pageUpdate(org, page) {
 
 	try {
 
-		file = file.trim();
-		debug(`file => ${file}`);
-	
-		let conn = new jsforce.Connection({
-			instanceUrl: org.instanceUrl,
-			accessToken: org.accessToken
-		});
-	
-		let [localFileRaw, visualforcePageRecord] = await Promise.all([
-			fs.readFile(file),
-			getVisualforceRecord(org, page)
-		]);
-	
-		let localFile = localFileRaw.toString('utf8');
-		let remoteFile = visualforcePageRecord.Markup;
-	
-		debug(`local file ${file} => %o`, localFile);
-		debug(`remote file ${page.name} => %o`, remoteFile);
-	
-		let localFileMeta = search(metaConfigPattern, localFile);
-		let remoteFileMeta = search(metaConfigPattern, remoteFile);
-	
-		let hasChange = true;
-	
-		debug(`remote content => %o`, remoteFileMeta[0]);
-		debug(`local meta => %o`, localFileMeta[0]);
-	
-		if(remoteFileMeta.length === 0) {
-			hasChange = false;
-		} else if(remoteFileMeta[0] !== localFileMeta[0]) {
-			remoteFile = remoteFile.replace(remoteFileMeta[0], localFileMeta[0]);
-		} else {
-			hasChange = false;
+		let visualforcePageRecord = await getVisualforceRecord(org, page);
+		let markup = visualforcePageRecord.Markup;
+		let markupCopy = new String(markup);
+
+		markup = removeMetaTagConfig(markup);
+		markup = await updateAssetTags(org, page, markup);
+
+		if(markup !== markupCopy) {
+			visualforcePageRecord.Markup = markup;
+			await updateVisualforceRecord(org, visualforcePageRecord);
 		}
-	
-		if(!hasChange) return;
-	
-		debug(`new vf page markup => %o`, remoteFile);
-	
-		let pageUpdate = await conn.sobject('ApexPage').update({
-			Id: page.salesforceId,
-			Markup: remoteFile
-		});
-	
-		debug(`vf page update result => %o`, pageUpdate);
 
 	} catch (error) {
 		debug(`vf page update error => %o`, error);
 	}
+}
+
+async function updateAssetTags(org, page, markup: string) : Promise<string> {
+
+	//TODO: The cli needs to store the root app directory, not just the "dist" path, this is a hack...
+	const appDirectory = join(page.outputDir, '..');
+
+	let [packageJson, fileNames] = await Promise.all([
+		getPackageJson(appDirectory),
+		getAssetFileNames(appDirectory)
+	]);
+
+	let prefix = `/assets/`;
+	let vendorJsRegex = new RegExp(`${prefix}vendor.*\\.js`, 'i');
+	let vendorCssRegex = new RegExp(`${prefix}vendor.*\\.css`, 'i');
+	let appJsRegex = new RegExp(`${prefix}${packageJson.name}.*\\.js`, 'i');
+	let appCssRegex = new RegExp(`${prefix}${packageJson.name}.*\\.css`, 'i');
+
+	fileNames.forEach(fileName => {
+		
+		fileName = `${prefix}${fileName}`;
+		
+		if(vendorJsRegex.exec(fileName)) {
+			markup = markup.replace(vendorJsRegex, fileName);
+		}
+
+		if(vendorCssRegex.exec(fileName)) {
+			markup = markup.replace(vendorCssRegex, fileName);
+		}
+
+		if(appJsRegex.exec(fileName)) {
+			markup = markup.replace(appJsRegex, fileName);
+		}
+
+		if(appCssRegex.exec(fileName)) {
+			markup = markup.replace(appCssRegex, fileName);
+		}
+
+	});
+
+	return markup;
 }
